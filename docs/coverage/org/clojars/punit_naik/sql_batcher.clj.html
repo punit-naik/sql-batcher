@@ -1,0 +1,356 @@
+<html>
+ <head>
+   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <link rel="stylesheet" href="../../../coverage.css"/>  <title> org/clojars/punit_naik/sql_batcher.clj </title>
+ </head>
+ <body>
+<span class="covered" title="1 out of 1 forms covered">
+                001&nbsp;&nbsp;(ns&nbsp;org.clojars.punit-naik.sql-batcher
+                </span><br/>
+<span class="not-tracked" title="0 out of 0 forms covered">
+                002&nbsp;&nbsp;&nbsp;&nbsp;(:require&nbsp;[clojure.java.jdbc&nbsp;:as&nbsp;db]
+                </span><br/>
+<span class="not-tracked" title="0 out of 0 forms covered">
+                003&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[clojure.string&nbsp;:as&nbsp;str]
+                </span><br/>
+<span class="not-tracked" title="0 out of 0 forms covered">
+                004&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[taoensso.timbre&nbsp;:as&nbsp;log]))
+                </span><br/>
+<span class="blank" title="0 out of 0 forms covered">
+                005&nbsp;&nbsp;
+                </span><br/>
+<span class="covered" title="1 out of 1 forms covered">
+                006&nbsp;&nbsp;(defn&nbsp;update-or-delete-op
+                </span><br/>
+<span class="not-tracked" title="0 out of 0 forms covered">
+                007&nbsp;&nbsp;&nbsp;&nbsp;&quot;Checks&nbsp;if&nbsp;the&nbsp;large&nbsp;query&nbsp;is&nbsp;doing&nbsp;an&nbsp;update&nbsp;or&nbsp;delete&nbsp;operation&quot;
+                </span><br/>
+<span class="not-tracked" title="0 out of 0 forms covered">
+                008&nbsp;&nbsp;&nbsp;&nbsp;[query]
+                </span><br/>
+<span class="covered" title="7 out of 7 forms covered">
+                009&nbsp;&nbsp;&nbsp;&nbsp;(if&nbsp;(str&#x2F;starts-with?&nbsp;query&nbsp;&quot;delete&nbsp;from&quot;)
+                </span><br/>
+<span class="not-tracked" title="0 out of 0 forms covered">
+                010&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;:delete&nbsp;:update))
+                </span><br/>
+<span class="blank" title="0 out of 0 forms covered">
+                011&nbsp;&nbsp;
+                </span><br/>
+<span class="covered" title="1 out of 1 forms covered">
+                012&nbsp;&nbsp;(defn&nbsp;table-name
+                </span><br/>
+<span class="not-tracked" title="0 out of 0 forms covered">
+                013&nbsp;&nbsp;&nbsp;&nbsp;&quot;Gets&nbsp;the&nbsp;name&nbsp;of&nbsp;the&nbsp;table&nbsp;from&nbsp;the&nbsp;large&nbsp;update&#x2F;delete&nbsp;query&quot;
+                </span><br/>
+<span class="not-tracked" title="0 out of 0 forms covered">
+                014&nbsp;&nbsp;&nbsp;&nbsp;[query]
+                </span><br/>
+<span class="covered" title="5 out of 5 forms covered">
+                015&nbsp;&nbsp;&nbsp;&nbsp;(let&nbsp;[query-parts&nbsp;(str&#x2F;split&nbsp;query&nbsp;#&quot;\s+&quot;)]
+                </span><br/>
+<span class="covered" title="2 out of 2 forms covered">
+                016&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(nth&nbsp;query-parts
+                </span><br/>
+<span class="covered" title="8 out of 8 forms covered">
+                017&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(if&nbsp;(=&nbsp;:delete&nbsp;(update-or-delete-op&nbsp;query))
+                </span><br/>
+<span class="not-tracked" title="0 out of 0 forms covered">
+                018&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2&nbsp;1))))
+                </span><br/>
+<span class="blank" title="0 out of 0 forms covered">
+                019&nbsp;&nbsp;
+                </span><br/>
+<span class="covered" title="1 out of 1 forms covered">
+                020&nbsp;&nbsp;(defn&nbsp;primary-key-column
+                </span><br/>
+<span class="not-tracked" title="0 out of 0 forms covered">
+                021&nbsp;&nbsp;&nbsp;&nbsp;&quot;Assumes&nbsp;the&nbsp;primary&nbsp;key&nbsp;column&nbsp;to&nbsp;be&nbsp;`&lt;table-name&gt;_id`&quot;
+                </span><br/>
+<span class="not-tracked" title="0 out of 0 forms covered">
+                022&nbsp;&nbsp;&nbsp;&nbsp;[query]
+                </span><br/>
+<span class="covered" title="6 out of 6 forms covered">
+                023&nbsp;&nbsp;&nbsp;&nbsp;(str&nbsp;(table-name&nbsp;query)&nbsp;&quot;_id&quot;))
+                </span><br/>
+<span class="blank" title="0 out of 0 forms covered">
+                024&nbsp;&nbsp;
+                </span><br/>
+<span class="covered" title="1 out of 1 forms covered">
+                025&nbsp;&nbsp;(defn&nbsp;remove-trailing-semicolon
+                </span><br/>
+<span class="not-tracked" title="0 out of 0 forms covered">
+                026&nbsp;&nbsp;&nbsp;&nbsp;&quot;Removes&nbsp;semi-colon&nbsp;from&nbsp;the&nbsp;end&nbsp;of&nbsp;a&nbsp;string&quot;
+                </span><br/>
+<span class="not-tracked" title="0 out of 0 forms covered">
+                027&nbsp;&nbsp;&nbsp;&nbsp;[s]
+                </span><br/>
+<span class="covered" title="5 out of 5 forms covered">
+                028&nbsp;&nbsp;&nbsp;&nbsp;(if&nbsp;(str&#x2F;ends-with?&nbsp;s&nbsp;&quot;;&quot;)
+                </span><br/>
+<span class="covered" title="5 out of 5 forms covered">
+                029&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(str&#x2F;join&nbsp;(butlast&nbsp;s))
+                </span><br/>
+<span class="covered" title="1 out of 1 forms covered">
+                030&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;s))
+                </span><br/>
+<span class="blank" title="0 out of 0 forms covered">
+                031&nbsp;&nbsp;
+                </span><br/>
+<span class="covered" title="1 out of 1 forms covered">
+                032&nbsp;&nbsp;(defn&nbsp;extract-where-clause
+                </span><br/>
+<span class="not-tracked" title="0 out of 0 forms covered">
+                033&nbsp;&nbsp;&nbsp;&nbsp;&quot;Extracts&nbsp;where&nbsp;clause&nbsp;from&nbsp;the&nbsp;large&nbsp;update&#x2F;delete&nbsp;query&quot;
+                </span><br/>
+<span class="not-tracked" title="0 out of 0 forms covered">
+                034&nbsp;&nbsp;&nbsp;&nbsp;[query]
+                </span><br/>
+<span class="covered" title="6 out of 6 forms covered">
+                035&nbsp;&nbsp;&nbsp;&nbsp;(-&gt;&gt;&nbsp;(str&#x2F;split&nbsp;query&nbsp;#&quot;where&nbsp;&quot;)
+                </span><br/>
+<span class="covered" title="1 out of 1 forms covered">
+                036&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;second
+                </span><br/>
+<span class="covered" title="1 out of 1 forms covered">
+                037&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;str&#x2F;trim
+                </span><br/>
+<span class="covered" title="1 out of 1 forms covered">
+                038&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;str&#x2F;trim-newline
+                </span><br/>
+<span class="covered" title="9 out of 9 forms covered">
+                039&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(#(str&#x2F;split&nbsp;%&nbsp;#&quot;and&quot;))
+                </span><br/>
+<span class="covered" title="3 out of 3 forms covered">
+                040&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(map&nbsp;str&#x2F;trim)
+                </span><br/>
+<span class="covered" title="1 out of 1 forms covered">
+                041&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(str&#x2F;join&nbsp;&quot;&nbsp;and&nbsp;&quot;)))
+                </span><br/>
+<span class="blank" title="0 out of 0 forms covered">
+                042&nbsp;&nbsp;
+                </span><br/>
+<span class="covered" title="1 out of 1 forms covered">
+                043&nbsp;&nbsp;(defn&nbsp;build-select-query
+                </span><br/>
+<span class="not-tracked" title="0 out of 0 forms covered">
+                044&nbsp;&nbsp;&nbsp;&nbsp;[query&nbsp;pkey-column]
+                </span><br/>
+<span class="covered" title="8 out of 8 forms covered">
+                045&nbsp;&nbsp;&nbsp;&nbsp;(str&nbsp;&quot;select&nbsp;&quot;&nbsp;pkey-column
+                </span><br/>
+<span class="covered" title="3 out of 3 forms covered">
+                046&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&quot;&nbsp;from&nbsp;&quot;&nbsp;(table-name&nbsp;query)
+                </span><br/>
+<span class="covered" title="3 out of 3 forms covered">
+                047&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&quot;&nbsp;where&nbsp;&quot;&nbsp;(extract-where-clause&nbsp;query)
+                </span><br/>
+<span class="covered" title="1 out of 1 forms covered">
+                048&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&quot;&nbsp;order&nbsp;by&nbsp;&quot;&nbsp;pkey-column
+                </span><br/>
+<span class="not-tracked" title="0 out of 0 forms covered">
+                049&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&quot;&nbsp;limit&nbsp;?,?&quot;))
+                </span><br/>
+<span class="blank" title="0 out of 0 forms covered">
+                050&nbsp;&nbsp;
+                </span><br/>
+<span class="covered" title="1 out of 1 forms covered">
+                051&nbsp;&nbsp;(defn&nbsp;get-pkey-batch
+                </span><br/>
+<span class="not-tracked" title="0 out of 0 forms covered">
+                052&nbsp;&nbsp;&nbsp;&nbsp;[db-spec&nbsp;select-query&nbsp;offset&nbsp;limit&nbsp;pkey-column]
+                </span><br/>
+<span class="covered" title="2 out of 2 forms covered">
+                053&nbsp;&nbsp;&nbsp;&nbsp;(db&#x2F;query
+                </span><br/>
+<span class="covered" title="1 out of 1 forms covered">
+                054&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;db-spec
+                </span><br/>
+<span class="covered" title="4 out of 4 forms covered">
+                055&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[select-query&nbsp;offset&nbsp;limit]
+                </span><br/>
+<span class="covered" title="5 out of 5 forms covered">
+                056&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{:row-fn&nbsp;(keyword&nbsp;pkey-column)}))
+                </span><br/>
+<span class="blank" title="0 out of 0 forms covered">
+                057&nbsp;&nbsp;
+                </span><br/>
+<span class="covered" title="1 out of 1 forms covered">
+                058&nbsp;&nbsp;(defn&nbsp;where-in-clause
+                </span><br/>
+<span class="not-tracked" title="0 out of 0 forms covered">
+                059&nbsp;&nbsp;&nbsp;&nbsp;[column-name&nbsp;values]
+                </span><br/>
+<span class="covered" title="8 out of 8 forms covered">
+                060&nbsp;&nbsp;&nbsp;&nbsp;(into&nbsp;[(str&nbsp;column-name
+                </span><br/>
+<span class="not-tracked" title="0 out of 0 forms covered">
+                061&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&quot;&nbsp;in&nbsp;(&quot;
+                </span><br/>
+<span class="covered" title="8 out of 8 forms covered">
+                062&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(str&#x2F;join&nbsp;&quot;,&quot;&nbsp;(repeat&nbsp;(count&nbsp;values)&nbsp;&quot;?&quot;))
+                </span><br/>
+<span class="not-tracked" title="0 out of 0 forms covered">
+                063&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&quot;)&quot;)]
+                </span><br/>
+<span class="covered" title="1 out of 1 forms covered">
+                064&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;values))
+                </span><br/>
+<span class="blank" title="0 out of 0 forms covered">
+                065&nbsp;&nbsp;
+                </span><br/>
+<span class="covered" title="1 out of 1 forms covered">
+                066&nbsp;&nbsp;(def&nbsp;set-clause
+                </span><br/>
+<span class="not-tracked" title="0 out of 0 forms covered">
+                067&nbsp;&nbsp;&nbsp;&nbsp;&quot;Gets&nbsp;the&nbsp;set&nbsp;column&nbsp;names&nbsp;and&nbsp;their&nbsp;values&nbsp;from&nbsp;the&nbsp;update&nbsp;query&quot;
+                </span><br/>
+<span class="covered" title="2 out of 2 forms covered">
+                068&nbsp;&nbsp;&nbsp;&nbsp;(memoize
+                </span><br/>
+<span class="covered" title="1 out of 1 forms covered">
+                069&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(fn&nbsp;[query]
+                </span><br/>
+<span class="covered" title="2 out of 2 forms covered">
+                070&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(-&gt;&nbsp;query
+                </span><br/>
+<span class="covered" title="3 out of 3 forms covered">
+                071&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(str&#x2F;split&nbsp;#&quot;&nbsp;where&nbsp;&quot;)
+                </span><br/>
+<span class="covered" title="1 out of 1 forms covered">
+                072&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;first
+                </span><br/>
+<span class="covered" title="4 out of 4 forms covered">
+                073&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(str&#x2F;split&nbsp;#&quot;set&nbsp;&quot;)
+                </span><br/>
+<span class="covered" title="1 out of 1 forms covered">
+                074&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;second
+                </span><br/>
+<span class="covered" title="1 out of 1 forms covered">
+                075&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;str&#x2F;trim
+                </span><br/>
+<span class="covered" title="1 out of 1 forms covered">
+                076&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;str&#x2F;trim-newline
+                </span><br/>
+<span class="covered" title="6 out of 6 forms covered">
+                077&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(str&#x2F;split&nbsp;#&quot;,&quot;)
+                </span><br/>
+<span class="covered" title="2 out of 2 forms covered">
+                078&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(-&gt;&gt;&nbsp;(map
+                </span><br/>
+<span class="covered" title="1 out of 1 forms covered">
+                079&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(fn&nbsp;[s]
+                </span><br/>
+<span class="covered" title="5 out of 5 forms covered">
+                080&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(let&nbsp;[[col-name&nbsp;value]&nbsp;(str&#x2F;split&nbsp;s&nbsp;#&quot;\=&quot;)
+                </span><br/>
+<span class="covered" title="5 out of 5 forms covered">
+                081&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;value&nbsp;(-&gt;&gt;&nbsp;value&nbsp;str&#x2F;trim-newline&nbsp;str&#x2F;trim)]
+                </span><br/>
+<span class="covered" title="8 out of 8 forms covered">
+                082&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[(-&gt;&gt;&nbsp;col-name&nbsp;str&#x2F;trim-newline&nbsp;str&#x2F;trim&nbsp;keyword)
+                </span><br/>
+<span class="partial" title="8 out of 9 forms covered">
+                083&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(if&nbsp;(re-matches&nbsp;#&quot;[0-9]+&quot;&nbsp;value)&nbsp;(read-string&nbsp;value)&nbsp;value)])))
+                </span><br/>
+<span class="covered" title="2 out of 2 forms covered">
+                084&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(into&nbsp;{}))))))
+                </span><br/>
+<span class="blank" title="0 out of 0 forms covered">
+                085&nbsp;&nbsp;
+                </span><br/>
+<span class="covered" title="1 out of 1 forms covered">
+                086&nbsp;&nbsp;(defn&nbsp;execute!
+                </span><br/>
+<span class="not-tracked" title="0 out of 0 forms covered">
+                087&nbsp;&nbsp;&nbsp;&nbsp;&quot;Executes&nbsp;the&nbsp;update&#x2F;delete&nbsp;query
+                </span><br/>
+<span class="not-tracked" title="0 out of 0 forms covered">
+                088&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Returns&nbsp;the&nbsp;number&nbsp;of&nbsp;rows&nbsp;processed&quot;
+                </span><br/>
+<span class="not-tracked" title="0 out of 0 forms covered">
+                089&nbsp;&nbsp;&nbsp;&nbsp;[db-spec&nbsp;query&nbsp;pkey-column&nbsp;pkey-batch]
+                </span><br/>
+<span class="covered" title="5 out of 5 forms covered">
+                090&nbsp;&nbsp;&nbsp;&nbsp;(when&nbsp;(seq&nbsp;pkey-batch)
+                </span><br/>
+<span class="covered" title="22 out of 22 forms covered">
+                091&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(log&#x2F;info&nbsp;(str&nbsp;&quot;Executing&nbsp;query&nbsp;&quot;&nbsp;query&nbsp;&quot;&nbsp;for&nbsp;a&nbsp;batch&nbsp;of&nbsp;size&nbsp;&quot;&nbsp;(count&nbsp;pkey-batch)))
+                </span><br/>
+<span class="covered" title="6 out of 6 forms covered">
+                092&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(let&nbsp;[table&nbsp;(keyword&nbsp;(table-name&nbsp;query))
+                </span><br/>
+<span class="covered" title="4 out of 4 forms covered">
+                093&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;where&nbsp;(where-in-clause&nbsp;pkey-column&nbsp;pkey-batch)]
+                </span><br/>
+<span class="covered" title="2 out of 2 forms covered">
+                094&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(first
+                </span><br/>
+<span class="covered" title="6 out of 6 forms covered">
+                095&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(if&nbsp;(=&nbsp;:update&nbsp;(update-or-delete-op&nbsp;query))
+                </span><br/>
+<span class="covered" title="8 out of 8 forms covered">
+                096&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(db&#x2F;update!&nbsp;db-spec&nbsp;table&nbsp;(set-clause&nbsp;query)&nbsp;where)
+                </span><br/>
+<span class="covered" title="5 out of 5 forms covered">
+                097&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(db&#x2F;delete!&nbsp;db-spec&nbsp;table&nbsp;where))))))
+                </span><br/>
+<span class="blank" title="0 out of 0 forms covered">
+                098&nbsp;&nbsp;
+                </span><br/>
+<span class="covered" title="1 out of 1 forms covered">
+                099&nbsp;&nbsp;(defn&nbsp;start-batch-processing!
+                </span><br/>
+<span class="not-tracked" title="0 out of 0 forms covered">
+                100&nbsp;&nbsp;&nbsp;&nbsp;[db-spec&nbsp;query&nbsp;batch-size&nbsp;&amp;&nbsp;[pkey-column]]
+                </span><br/>
+<span class="covered" title="17 out of 17 forms covered">
+                101&nbsp;&nbsp;&nbsp;&nbsp;(log&#x2F;info&nbsp;&quot;Starting&nbsp;the&nbsp;batch&nbsp;processing&nbsp;of&nbsp;large&nbsp;query:&quot;&nbsp;query)
+                </span><br/>
+<span class="partial" title="8 out of 11 forms covered">
+                102&nbsp;&nbsp;&nbsp;&nbsp;(let&nbsp;[pkey-column&nbsp;(str&#x2F;lower-case&nbsp;(or&nbsp;pkey-column&nbsp;(primary-key-column&nbsp;query)))
+                </span><br/>
+<span class="covered" title="5 out of 5 forms covered">
+                103&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;query&nbsp;(-&gt;&nbsp;query&nbsp;str&#x2F;lower-case&nbsp;remove-trailing-semicolon)
+                </span><br/>
+<span class="covered" title="4 out of 4 forms covered">
+                104&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;select-query&nbsp;(build-select-query&nbsp;query&nbsp;pkey-column)
+                </span><br/>
+<span class="covered" title="5 out of 5 forms covered">
+                105&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;delete-op?&nbsp;(=&nbsp;:delete&nbsp;(update-or-delete-op&nbsp;query))]
+                </span><br/>
+<span class="partial" title="4 out of 7 forms covered">
+                106&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(loop&nbsp;[offset&nbsp;0
+                </span><br/>
+<span class="not-tracked" title="0 out of 0 forms covered">
+                107&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;total-rows-processed&nbsp;0
+                </span><br/>
+<span class="not-tracked" title="0 out of 0 forms covered">
+                108&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;finished?&nbsp;false]
+                </span><br/>
+<span class="partial" title="2 out of 4 forms covered">
+                109&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(if&nbsp;finished?
+                </span><br/>
+<span class="partial" title="18 out of 36 forms covered">
+                110&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(do&nbsp;(log&#x2F;info&nbsp;&quot;Total&nbsp;number&nbsp;of&nbsp;rows&nbsp;processed:&quot;&nbsp;total-rows-processed)
+                </span><br/>
+<span class="partial" title="17 out of 34 forms covered">
+                111&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(log&#x2F;info&nbsp;&quot;Finished&nbsp;batch&nbsp;processing&nbsp;of&nbsp;query:&quot;&nbsp;query))
+                </span><br/>
+<span class="partial" title="8 out of 16 forms covered">
+                112&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(let&nbsp;[batch&nbsp;(get-pkey-batch&nbsp;db-spec&nbsp;select-query&nbsp;offset&nbsp;batch-size&nbsp;pkey-column)
+                </span><br/>
+<span class="partial" title="2 out of 4 forms covered">
+                113&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;batch-count&nbsp;(count&nbsp;batch)]
+                </span><br/>
+<span class="partial" title="1 out of 2 forms covered">
+                114&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(recur&nbsp;(if&nbsp;delete-op?&nbsp;offset&nbsp;(+&nbsp;offset&nbsp;batch-count))
+                </span><br/>
+<span class="not-tracked" title="0 out of 0 forms covered">
+                115&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(+&nbsp;total-rows-processed&nbsp;(or&nbsp;(execute!&nbsp;db-spec&nbsp;query&nbsp;pkey-column&nbsp;batch)&nbsp;0))
+                </span><br/>
+<span class="not-tracked" title="0 out of 0 forms covered">
+                116&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(zero?&nbsp;batch-count)))))))
+                </span><br/>
+ </body>
+</html>
