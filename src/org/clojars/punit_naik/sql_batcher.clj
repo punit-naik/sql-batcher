@@ -26,7 +26,7 @@
   "Removes semi-colon from the end of a string"
   [s]
   (if (str/ends-with? s ";")
-    (->> (butlast s) str/join)
+    (str/join (butlast s))
     s))
 
 (defn extract-where-clause
@@ -59,8 +59,7 @@
   [column-name values]
   (into [(str column-name
               " in ("
-              (->> (repeat (count values) "?")
-                   (str/join ","))
+              (str/join "," (repeat (count values) "?"))
               ")")]
         values))
 
