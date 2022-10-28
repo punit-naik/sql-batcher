@@ -6,7 +6,7 @@
 (defn update-or-delete-op
   "Checks if the large query is doing an update or delete operation"
   [query]
-  (if (str/starts-with? query "DELETE FROM")
+  (if (str/starts-with? query "delete from")
     :delete :update))
 
 (defn table-name
@@ -23,19 +23,22 @@
   (str (table-name query) "_id"))
 
 (defn remove-trailing-semicolon
-  [query]
-  (if (str/ends-with? query ";")
-    (->> (butlast query) str/join)
-    query))
+  "Removes semi-colon from the end of a string"
+  [s]
+  (if (str/ends-with? s ";")
+    (->> (butlast s) str/join)
+    s))
 
 (defn extract-where-clause
   "Extracts where clause from the large update/delete query"
   [query]
-  (->> (str/split query "where ")
+  (->> (str/split query #"where ")
        second
        str/trim
        str/trim-newline
-       remove-trailing-semicolon))
+       (#(str/split % #"and"))
+       (map str/trim)
+       (str/join " and ")))
 
 (defn build-select-query
   [query pkey-column]
@@ -75,9 +78,10 @@
          (str/split #",")
          (->> (map
                (fn [s]
-                 (let [[col-name value] (str/split s #"\=")]
+                 (let [[col-name value] (str/split s #"\=")
+                       value (->> value str/trim-newline str/trim)]
                    [(->> col-name str/trim-newline str/trim keyword)
-                    (->> value str/trim-newline str/trim-newline keyword)])))
+                    (if (re-matches #"[0-9]+" value) (read-string value) value)])))
               (into {}))))))
 
 (defn execute!
@@ -97,8 +101,9 @@
   [db-spec query batch-size & [pkey-column]]
   (log/info "Starting the batch processing of large query:" query)
   (let [pkey-column (str/lower-case (or pkey-column (primary-key-column query)))
-        query (str/lower-case query)
-        select-query (build-select-query query pkey-column)]
+        query (-> query str/lower-case remove-trailing-semicolon)
+        select-query (build-select-query query pkey-column)
+        delete-op? (= :delete (update-or-delete-op query))]
     (loop [offset 0
            total-rows-processed 0
            finished? false]
@@ -107,6 +112,6 @@
             (log/info "Finished batch processing of query:" query))
         (let [batch (get-pkey-batch db-spec select-query offset batch-size pkey-column)
               batch-count (count batch)]
-          (recur (+ offset batch-count)
+          (recur (if delete-op? offset (+ offset batch-count))
                  (+ total-rows-processed (or (execute! db-spec query pkey-column batch) 0))
                  (zero? batch-count)))))))
