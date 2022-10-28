@@ -1,10 +1,10 @@
 # sql-batcher
 
-A Clojure library designed to run large sql updates in batches
+A Clojure library designed to run large sql updates/deletes in batches
 
 ## Rationale
 
-FIXME
+If an update/delete query is doing a large table scan and spanning a large number of rows, that table could be blocked for a potentially very long time. To avoid this, we run our update/delete queries in batches of relatively small sizes, based on the primary key(s) of the table to on which the updates/deletes are supposed to run. More info in this article - http://mysql.rjweb.org/doc.php/deletebig
 
 ## Usage
 
