@@ -45,9 +45,9 @@
   (is (= "punit naik" (sb/remove-trailing-semicolon "punit naik;")))
   (is (= "punit; naik" (sb/remove-trailing-semicolon "punit; naik;"))))
 
-(deftest extract-where-clause-test
-  (is (= "a > 2 and a < 5" (sb/extract-where-clause delete-query)))
-  (is (= "a > 1 and a < 5" (sb/extract-where-clause update-query))))
+(deftest where-clause-test
+  (is (= "a > 2 and a < 5" (sb/where-clause delete-query)))
+  (is (= "a > 1 and a < 5" (sb/where-clause update-query))))
 
 (deftest build-select-query-test
   (is (= "select x_id from x where a > 2 and a < 5 order by x_id limit ?,?" (sb/build-select-query delete-query "x_id")))

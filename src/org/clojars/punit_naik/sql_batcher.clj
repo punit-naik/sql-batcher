@@ -29,7 +29,7 @@
     (str/join (butlast s))
     s))
 
-(defn extract-where-clause
+(defn where-clause
   "Extracts where clause from the large update/delete query"
   [query]
   (->> (str/split query #"where ")
@@ -44,7 +44,7 @@
   [query pkey-column]
   (str "select " pkey-column
        " from " (table-name query)
-       " where " (extract-where-clause query)
+       " where " (where-clause query)
        " order by " pkey-column
        " limit ?,?"))
 
