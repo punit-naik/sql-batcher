@@ -6,6 +6,7 @@
 
 (defonce delete-query "delete from x where a > 2 and  a < 5")
 (defonce update-query "update x set b  =  1 where a > 1  and a < 5")
+(defonce join-query "select * from x inner join y on x.id = y.id left join z on z.id = x.id where x.id = 1 and y.id = 1 and z.id = 1")
 
 (defonce db (atom nil))
 
@@ -46,8 +47,11 @@
   (is (= "punit; naik" (sb/remove-trailing-semicolon "punit; naik;"))))
 
 (deftest where-clause-test
-  (is (= "a > 2 and a < 5" (sb/where-clause delete-query)))
-  (is (= "a > 1 and a < 5" (sb/where-clause update-query))))
+  (is (= "where a > 2 and a < 5" (sb/where-clause delete-query)))
+  (is (= "where a > 1 and a < 5" (sb/where-clause update-query))))
+
+(deftest join-clause-test
+  (is (= "inner join y on x.id = y.id left join z on z.id = x.id" (sb/join-clause join-query))))
 
 (deftest build-select-query-test
   (is (= "select x_id from x where a > 2 and a < 5 order by x_id limit ?,?" (sb/build-select-query delete-query "x_id")))
