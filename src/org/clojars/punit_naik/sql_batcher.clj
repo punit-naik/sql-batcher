@@ -32,21 +32,33 @@
 (defn where-clause
   "Extracts where clause from the large update/delete query"
   [query]
-  (->> (str/split query #"where ")
-       second
-       str/trim
-       str/trim-newline
-       (#(str/split % #"and"))
-       (map str/trim)
-       (str/join " and ")))
+  (when-let [where (-> (re-matcher #"(where .* (and|or) .*)"
+                                   query)
+                       re-find
+                       first)]
+    (remove-trailing-semicolon (str/replace where #"\s+" " "))))
+
+(defn join-clause
+  [query]
+  (when-let [join (-> (re-matcher #"(\w* join \w+ on .* \= .*)"
+                                  query)
+                      re-find
+                      first)]
+    (-> (str/replace join #" where.*" "")
+        (str/replace #"\s+" " "))))
 
 (defn build-select-query
   [query pkey-column]
-  (str "select " pkey-column
-       " from " (table-name query)
-       " where " (where-clause query)
-       " order by " pkey-column
-       " limit ?,?"))
+  (let [join (join-clause query)
+        where (where-clause query)]
+    (str "select " pkey-column
+         " from " (table-name query)
+         (when join
+           (str " " join))
+         (when where
+           (str " " where))
+         " order by " pkey-column
+         " limit ?,?")))
 
 (defn get-pkey-batch
   [db-spec select-query offset limit pkey-column]
