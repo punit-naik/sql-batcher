@@ -54,14 +54,14 @@
   (is (= "inner join y on x.id = y.id left join z on z.id = x.id" (sb/join-clause join-query))))
 
 (deftest build-select-query-test
-  (is (= "select x_id from x where a > 2 and a < 5 order by x_id limit ?,?" (sb/build-select-query delete-query "x_id")))
-  (is (= "select x_id from x where a > 1 and a < 5 order by x_id limit ?,?" (sb/build-select-query update-query "x_id"))))
+  (is (= "select x_id from x where a > 2 and a < 5 order by x_id limit ?" (sb/build-select-query delete-query "x_id")))
+  (is (= "select x_id from x where a > 1 and a < 5 order by x_id limit ?" (sb/build-select-query update-query "x_id"))))
 
 (deftest get-pkey-batch-test
-  (is (= [3] (sb/get-pkey-batch @db (sb/build-select-query delete-query "a") 0 1 "a")))
-  (is (= [3 4] (sb/get-pkey-batch @db (sb/build-select-query delete-query "a") 0 4 "a")))
-  (is (= [2] (sb/get-pkey-batch @db (sb/build-select-query update-query "a") 0 1 "a")))
-  (is (= [2 3 4] (sb/get-pkey-batch @db (sb/build-select-query update-query "a") 0 4 "a"))))
+  (is (= [3] (sb/get-pkey-batch @db (sb/build-select-query delete-query "a") 1 "a")))
+  (is (= [3 4] (sb/get-pkey-batch @db (sb/build-select-query delete-query "a") 4 "a")))
+  (is (= [2] (sb/get-pkey-batch @db (sb/build-select-query update-query "a") 1 "a")))
+  (is (= [2 3 4] (sb/get-pkey-batch @db (sb/build-select-query update-query "a") 4 "a"))))
 
 (deftest where-in-clause-test
   (is (= ["a in (?,?,?,?)" 1 2 3 4] (sb/where-in-clause "a" [1 2 3 4])))
@@ -77,6 +77,10 @@
   (is (= 2 (sb/execute! @db delete-query "a" [3 4])))
   (is (= [] (db/query @db ["select b from x where a > 2 and a < 5"] {:row-fn :b})))
   (restore-state))
+
+(deftest add-extra-where-clauses-test
+  (is (= "select * from x where b != 2 and  a = 1"
+         (sb/add-extra-where-clauses "select * from x where a = 1" {:b 2}))))
 
 (deftest start-batch-processing!-test
   (sb/start-batch-processing! @db update-query 1 "a")
